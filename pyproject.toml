@@ -1,0 +1,79 @@
+[project]
+name = "lazycolories"
+version = "0.1.0"
+requires-python = ">=3.14"
+description = "Telegram bot to count my calories"
+readme = "README.md"
+dependencies = [
+    "openai>=1.58.1",
+    "python-telegram-bot>=22.6",
+    "python-dotenv>=1.2.1",
+    "aiohttp>=3.13.3",
+    "pytz>=2025.2",
+    "langgraph>=1.2.5",
+    "ruff>=0.15.17",
+    "langsmith>=0.8.16",
+    "pydantic>=2.13.4",
+    "langchain-openai>=1.3.2",
+]
+
+[project.optional-dependencies]
+dev = ["ruff>=0.14.14"]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["lazycolories"]
+
+[tool.setuptools.package-dir]
+lazycolories = "src"
+
+[tool.ruff]
+include = ["src/*.py"]
+line-length = 120
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-format = false
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "W291", # trailing whitespace
+]
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = false
+mark-parentheses = false
+
+[tool.ruff.lint.flake8-type-checking]
+strict = true
+
+[tool.ruff.lint.isort]
+force-single-line = true
+known-first-party = ["src"]
+no-lines-before = ["local-folder"]
+order-by-type = false
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
