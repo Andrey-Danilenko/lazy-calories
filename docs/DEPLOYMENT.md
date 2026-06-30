@@ -1,40 +1,3 @@
-# CI/CD: настройка и деплой
-
-Документ описывает, как устроены CI/CD пайплайны проекта и как настроить деплой
-на VPS «в одну кнопку» из GitHub.
-
-## Что есть в проекте
-
-| Файл | Назначение |
-|---|---|
-| `.github/workflows/ci.yml` | **CI** — на каждый push и pull request проверяет `ruff format` и `ruff check`. |
-| `.github/workflows/deploy.yml` | **CD** — деплой на VPS вручную по кнопке (`workflow_dispatch`). |
-| `Dockerfile` | Образ бота на базе официального uv-образа (Python 3.14). |
-| `docker-compose.yml` | Запуск контейнера на VPS с volume для данных и `.env`. |
-| `.dockerignore` | Что не попадает в образ (`.venv`, `.git`, данные, секреты). |
-
----
-
-## CI — проверка кода
-
-`ci.yml` запускается автоматически на каждый commit (push) и pull request. Шаги:
-
-1. Установка [uv](https://github.com/astral-sh/uv) (`astral-sh/setup-uv`).
-2. `uv sync --frozen --no-install-project` — установка зависимостей из `uv.lock`.
-3. `ruff format --check .` — падает, если код не отформатирован.
-4. `ruff check .` — падает, если есть нарушения линтера.
-
-Никакой настройки не требуется — пайплайн работает сразу после пуша в репозиторий.
-
-Чтобы починить упавший CI локально перед пушем:
-
-```bash
-uv run ruff format .
-uv run ruff check --fix .
-```
-
----
-
 ## CD — деплой на VPS
 
 Деплой запускается вручную: **GitHub → вкладка Actions → Deploy → Run workflow**.
@@ -72,6 +35,8 @@ nano .env   # заполняем DEEPSEEK_API_KEY, TELEGRAM_BOT_TOKEN, LANGSMITH
 Проверяем, что всё запускается вручную:
 
 ```bash
+sudo usermod -aG docker $USER
+newgrp docker
 docker compose up -d --build
 docker compose logs -f        # должно появиться "Starting bot..."
 ```
