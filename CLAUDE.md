@@ -1,4 +1,4 @@
-# Project: LazyColories – Telegram bot for easy Food energy counting
+# Project: LazyCalories – Telegram bot for easy Food energy counting
 
 Telegram bot for easy Food energy counting.
 
@@ -9,7 +9,7 @@ Telegram bot for easy Food energy counting.
 # Project Structure
 
 ```
-lazyColories/
+lazy-calories/
 ├── main.py              # Composition root: build Settings + deps, wire telegram handlers, poll
 ├── src/
 │   ├── common/                  # general-purpose, feature-agnostic infrastructure
@@ -90,7 +90,7 @@ reply.
 # Development Rules
 - **Linter**: ruff
 - **Comments**: Only when logic needs explanation, not for self-explanatory code
-- **Utilities**: Reusable, feature-agnostic helpers → `lazyColories/src/common/` (e.g. `clock.py`, `llm.py`)
+- **Utilities**: Reusable, feature-agnostic helpers → `lazy-calories/src/common/` (e.g. `clock.py`, `llm.py`)
 - **Code style**: DRY, Clean Code, SOLID. Split long functions. No single-use variables.
 - **Imports**: Avoid nested imports unless necessary
 - **CLAUDE.md maintenance**: When adding/modifying apps or models, update the "Project Structure" and "Apps Overview" sections in this file to keep context accurate

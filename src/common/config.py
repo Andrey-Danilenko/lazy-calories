@@ -22,4 +22,5 @@ class Settings:
             telegram_token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
         )
 
+
 settings = Settings.from_env()

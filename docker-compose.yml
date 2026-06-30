@@ -1,0 +1,10 @@
+services:
+  bot:
+    build: .
+    image: lazy-calories:latest
+    container_name: lazy-calories
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./stored_data:/app/stored_data
+      - ./logs:/app/logs

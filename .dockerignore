@@ -1,0 +1,29 @@
+# Version control
+.git
+.gitignore
+
+# Local environments / secrets
+.venv
+.env
+.env.local
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ruff_cache/
+.pytest_cache/
+
+# Runtime data (persisted via volumes, not baked into the image)
+stored_data/
+logs/
+ignored/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# CI/CD & docs (not needed at runtime)
+.github/
+docs/

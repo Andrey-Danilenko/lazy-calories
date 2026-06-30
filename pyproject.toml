@@ -1,5 +1,5 @@
 [project]
-name = "lazycolories"
+name = "lazy-calories"
 version = "0.1.0"
 requires-python = ">=3.14"
 description = "Telegram bot to count my calories"
@@ -25,10 +25,10 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["lazycolories"]
+packages = ["lazy_calories"]
 
 [tool.setuptools.package-dir]
-lazycolories = "src"
+lazy_calories = "src"
 
 [tool.ruff]
 include = ["src/*.py"]
