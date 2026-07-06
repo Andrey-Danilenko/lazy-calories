@@ -1,10 +1,38 @@
 services:
+  db:
+    image: postgres:17-alpine
+    container_name: lazy-calories-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lazy
+      POSTGRES_PASSWORD: lazy
+      POSTGRES_DB: lazycalories
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lazy -d lazycalories"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   bot:
     build: .
     image: lazy-calories:latest
     container_name: lazy-calories
     restart: unless-stopped
     env_file: .env
+    environment:
+      # Override the localhost URL from .env: inside the compose network Postgres is "db".
+      DATABASE_URL: postgresql+asyncpg://lazy:lazy@db:5432/lazycalories
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
+      # ./stored_data also persists the embedded Qdrant vector store (stored_data/qdrant).
       - ./stored_data:/app/stored_data
       - ./logs:/app/logs
+
+volumes:
+  pg_data:

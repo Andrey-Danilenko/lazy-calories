@@ -6,16 +6,19 @@ from src.common.config import settings
 from src.common.llm import create_chat_client
 from src.common.llm import create_structured_llm
 from src.consumption.intents import Intent
-from src.consumption.models import Meal
+from src.consumption.models import ParsedMeal
+from src.consumption.models import ProductNutritionList
 from src.consumption.prompts import CLASSIFY_PROMPT
-from src.consumption.prompts import NUTRITION_PROMPT
+from src.consumption.prompts import NUTRITION_LOOKUP_PROMPT
+from src.consumption.prompts import PARSE_PROMPT
 
 
 class ConsumptionAgent:
     def __init__(self):
         self._model = settings.deepseek_model
         self._chat_client = create_chat_client()
-        self._meal_extractor = create_structured_llm(Meal)
+        self._meal_parser = create_structured_llm(ParsedMeal)
+        self._nutrition_lookup = create_structured_llm(ProductNutritionList)
 
     async def _ask_json(self, system_prompt: str, user_message: str) -> dict:
         response = await self._chat_client.chat.completions.create(
@@ -36,6 +39,11 @@ class ConsumptionAgent:
             return Intent(intent)
         return Intent.UNKNOWN
 
-    @traceable(name="extract_meal")
-    async def extract_meal(self, message: str) -> Meal:
-        return await self._meal_extractor.ainvoke([("system", NUTRITION_PROMPT), ("human", message)])
+    @traceable(name="parse_meal")
+    async def parse_meal(self, message: str) -> ParsedMeal:
+        return await self._meal_parser.ainvoke([("system", PARSE_PROMPT), ("human", message)])
+
+    @traceable(name="lookup_nutrition")
+    async def lookup_nutrition(self, names: list[str]) -> ProductNutritionList:
+        user_message = "\n".join(names)
+        return await self._nutrition_lookup.ainvoke([("system", NUTRITION_LOOKUP_PROMPT), ("human", user_message)])

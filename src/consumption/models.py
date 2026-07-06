@@ -13,8 +13,27 @@ class Product(BaseModel):
     carbohydrates: float = Field(..., description="Carbohydrates in grams for the eaten amount")
 
 
-class Meal(BaseModel):
-    products: list[Product] = Field(..., description="One entry per distinct product in the meal")
+class ParsedItem(BaseModel):
+    name: str = Field(..., description="Short canonical name of a single product or dish, in Russian")
+    weight_grams: float = Field(..., description="Estimated eaten mass in grams (always provide an estimate)")
+
+
+class ParsedMeal(BaseModel):
+    items: list[ParsedItem] = Field(..., description="One entry per distinct product in the meal")
+
+
+class ProductNutrition(BaseModel):
+    """Reference nutrition per 100 g — the canonical form stored in the vector cache."""
+
+    name: str = Field(..., description="Short canonical name of the product, in Russian")
+    energy: float = Field(..., description="Food energy in kcal per 100 g")
+    protein: float = Field(..., description="Protein in grams per 100 g")
+    fat: float = Field(..., description="Fat in grams per 100 g")
+    carbohydrates: float = Field(..., description="Carbohydrates in grams per 100 g")
+
+
+class ProductNutritionList(BaseModel):
+    products: list[ProductNutrition] = Field(..., description="One entry per requested product name")
 
 
 class Nutrition(TypedDict):
@@ -25,6 +44,19 @@ class Nutrition(TypedDict):
 
 
 NUTRITION_FIELDS: tuple[str, ...] = ("energy", "protein", "fat", "carbohydrates")
+
+
+def scale_to_eaten(reference: ProductNutrition, weight_grams: float) -> Product:
+    """Scale per-100g reference nutrition to the actually eaten mass."""
+    multiplier = weight_grams / 100
+    return Product(
+        name=reference.name,
+        weight_grams=weight_grams,
+        energy=reference.energy * multiplier,
+        protein=reference.protein * multiplier,
+        fat=reference.fat * multiplier,
+        carbohydrates=reference.carbohydrates * multiplier,
+    )
 
 
 def empty_nutrition() -> Nutrition:

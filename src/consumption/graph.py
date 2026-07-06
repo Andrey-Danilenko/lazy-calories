@@ -11,6 +11,7 @@ from src.consumption.agent import ConsumptionAgent
 from src.consumption.intents import Intent
 from src.consumption.models import is_empty_nutrition
 from src.consumption.models import sum_nutrition
+from src.consumption.resolver import NutritionResolver
 from src.consumption.state import AgentState
 from src.consumption.storage import MealRepository
 
@@ -23,11 +24,13 @@ class ConsumptionGraph:
     def __init__(
         self,
         agent: ConsumptionAgent,
+        resolver: NutritionResolver,
         repository: MealRepository,
         validator: PromptValidator,
         max_extraction_attempts: int = MAX_EXTRACTION_ATTEMPTS,
     ):
         self._agent = agent
+        self._resolver = resolver
         self._repository = repository
         self._validator = validator
         self._max_attempts = max_extraction_attempts
@@ -45,15 +48,14 @@ class ConsumptionGraph:
     async def _extract_node(self, state: AgentState) -> AgentState:
         state["attempts"] += 1
         try:
-            meal = await self._agent.extract_meal(state["message"])
-            state["products"] = [product.model_dump() for product in meal.products] or None
+            state["products"] = await self._resolver.resolve(state["message"]) or None
         except Exception as error:
             logger.warning("Meal extraction failed (attempt %s): %s", state["attempts"], error)
             state["products"] = None
         return state
 
     async def _save_meal_node(self, state: AgentState) -> AgentState:
-        self._repository.append_meal(state["user_id"], state["message"], state["products"])
+        await self._repository.append_meal(state["user_id"], state["message"], state["products"])
         total = sum_nutrition(state["products"])
         state["reply"] = replies.meal_logged(total)
         return state
@@ -63,7 +65,7 @@ class ConsumptionGraph:
         return state
 
     async def _get_stats_node(self, state: AgentState) -> AgentState:
-        totals = self._repository.read_today_totals(state["user_id"])
+        totals = await self._repository.read_today_totals(state["user_id"])
         state["reply"] = replies.NO_STATS_REPLY if is_empty_nutrition(totals) else replies.daily_stats(totals)
         return state
 
