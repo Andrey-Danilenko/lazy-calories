@@ -80,3 +80,4 @@ celerybeat.pid
 ignored/
 stored_data/
 logs/
+/.mcp.json

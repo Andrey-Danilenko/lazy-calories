@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy.ext.asyncio import AsyncSession
 from telegram import Update
@@ -12,16 +14,23 @@ from src.consumption.storage import MealRepository
 from src.consumption.vector_store import FoodVectorStore
 
 
-def make_message_handler(session_factory: async_sessionmaker[AsyncSession]):
+def make_message_handler(
+    session_factory: async_sessionmaker[AsyncSession], get_vector_store: Callable[[], FoodVectorStore | None]
+):
     agent = ConsumptionAgent()
-    resolver = NutritionResolver(agent, FoodVectorStore())
-    graph = ConsumptionGraph(agent, resolver, MealRepository(session_factory), PromptValidator())
+    graph = ConsumptionGraph(agent, MealRepository(session_factory), PromptValidator())
 
     async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = update.message.text.strip()
         log_action(update, f"текстовое сообщение: {text}")
 
-        reply = await graph.run(update.effective_user.id, text)
+        vector_store = get_vector_store()
+        if vector_store is None:
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Бот ещё не готов, попробуйте позже")
+            return
+
+        resolver = NutritionResolver(agent, vector_store)
+        reply = await graph.run(update.effective_user.id, text, resolver)
         await context.bot.send_message(chat_id=update.effective_chat.id, text=reply)
 
     return handle_message

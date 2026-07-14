@@ -1,3 +1,5 @@
+import asyncio
+
 from telegram.ext import Application
 from telegram.ext import ApplicationBuilder
 from telegram.ext import CommandHandler
@@ -10,14 +12,21 @@ from src.common.db import create_session_factory
 from src.common.db import init_models
 from src.common.start import start
 from src.consumption.bot import make_message_handler
+from src.consumption.vector_store import FoodVectorStore
+
+
+_vector_store: FoodVectorStore | None = None
 
 
 def build_application():
+    global _vector_store
     engine = create_engine()
     session_factory = create_session_factory(engine)
 
     async def on_startup(_: Application) -> None:
+        global _vector_store
         await init_models(engine)
+        _vector_store = await asyncio.to_thread(FoodVectorStore)
 
     async def on_shutdown(_: Application) -> None:
         await engine.dispose()
@@ -31,7 +40,7 @@ def build_application():
         .build()
     )
     application.add_handler(CommandHandler("start", start))
-    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), make_message_handler(session_factory)))
+    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), make_message_handler(session_factory, lambda: _vector_store)))
     return application
 
 

@@ -24,16 +24,15 @@ class ConsumptionGraph:
     def __init__(
         self,
         agent: ConsumptionAgent,
-        resolver: NutritionResolver,
         repository: MealRepository,
         validator: PromptValidator,
         max_extraction_attempts: int = MAX_EXTRACTION_ATTEMPTS,
     ):
         self._agent = agent
-        self._resolver = resolver
         self._repository = repository
         self._validator = validator
         self._max_attempts = max_extraction_attempts
+        self._resolver: NutritionResolver | None = None
         self._compiled = self._build()
 
     async def _validate_node(self, state: AgentState) -> AgentState:
@@ -48,6 +47,7 @@ class ConsumptionGraph:
     async def _extract_node(self, state: AgentState) -> AgentState:
         state["attempts"] += 1
         try:
+            assert self._resolver is not None, "resolver not initialized"
             state["products"] = await self._resolver.resolve(state["message"]) or None
         except Exception as error:
             logger.warning("Meal extraction failed (attempt %s): %s", state["attempts"], error)
@@ -132,7 +132,8 @@ class ConsumptionGraph:
         return builder.compile()
 
     @traceable(name="consumption_agent")
-    async def run(self, user_id: int, message: str) -> str:
+    async def run(self, user_id: int, message: str, resolver: NutritionResolver) -> str:
+        self._resolver = resolver
         initial_state: AgentState = {
             "user_id": user_id,
             "message": message,
