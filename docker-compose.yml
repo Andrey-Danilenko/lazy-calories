@@ -17,6 +17,22 @@ services:
       timeout: 3s
       retries: 5
 
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: lazy-calories-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT_API_KEY: ""
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   bot:
     build: .
     image: lazy-calories:latest
@@ -26,13 +42,16 @@ services:
     environment:
       # Override the localhost URL from .env: inside the compose network Postgres is "db".
       DATABASE_URL: postgresql+asyncpg://lazy:lazy@db:5432/lazycalories
+      # Use external Qdrant server instead of embedded
+      QDRANT_URL: http://qdrant:6333
     depends_on:
       db:
         condition: service_healthy
+      qdrant:
+        condition: service_healthy
     volumes:
-      # ./stored_data also persists the embedded Qdrant vector store (stored_data/qdrant).
-      - ./stored_data:/app/stored_data
       - ./logs:/app/logs
 
 volumes:
   pg_data:
+  qdrant_data:
