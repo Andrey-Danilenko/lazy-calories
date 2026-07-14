@@ -41,8 +41,12 @@ docker compose up -d --build
 docker compose logs -f        # должно появиться "Starting bot..."
 ```
 
-Папки `stored_data/` и `logs/` монтируются как volume, поэтому данные пользователей
-переживают пересборку контейнера.
+`docker compose up` поднимает два сервиса: `db` (PostgreSQL) и `bot`. Данные пользователей
+хранятся в Postgres (volume `pg_data`), а embedded-хранилище Qdrant и логи — в примонтированных
+папках `stored_data/` и `logs/`. Всё это переживает пересборку контейнера.
+
+> `DATABASE_URL` для контейнера задаётся прямо в `docker-compose.yml` (хост `db`), поэтому
+> значение из `.env` (там указан `localhost` для локального запуска) внутри compose не мешает.
 
 ### Шаг 2. SSH-ключ для GitHub Actions
 

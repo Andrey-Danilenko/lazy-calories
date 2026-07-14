@@ -34,7 +34,7 @@ validate (security) → orchestrator (классификация интента)
 
 Слои разделены, зависимости направлены в одну сторону (`consumption` → `common`):
 
-- **`src/common/`** — feature-agnostic инфраструктура: конфиг (`config.py`), фабрика LLM-клиентов (`llm.py`), часы/таймзона (`clock.py`), логирование (`logger.py`), переиспользуемый `PromptValidator` (`prompts_validator.py`), обработчик `/start` (`start.py`).
+- **`src/common/`** — feature-agnostic инфраструктура: конфиг (`config.py`), фабрика LLM-клиентов (`llm.py`), async-движок и сессии SQLAlchemy (`db.py`), часы/таймзона (`clock.py`), логирование (`logger.py`), переиспользуемый `PromptValidator` (`prompts_validator.py`), обработчик `/start` (`start.py`).
 - **`src/consumption/`** — агент учёта еды: NLU (`agent.py`), хранилище (`storage.py`), граф (`graph.py`), тексты ответов (`replies.py`), Telegram-связка (`bot.py`).
 
 **Разделение agent/graph**: `ConsumptionAgent` держит все вызовы LLM и ничего больше; узлы `ConsumptionGraph` тонкие — они двигают состояние и делегируют агенту (интеллект), `MealRepository` (хранение) и `replies` (тексты).
@@ -43,13 +43,16 @@ validate (security) → orchestrator (классификация интента)
 
 ## Хранение
 
-Без БД. `MealRepository` пишет по одному JSONL-файлу на пользователя в день:
+PostgreSQL через async SQLAlchemy (драйвер asyncpg). `MealRepository` (`storage.py`) работает
+с двумя таблицами:
 
-```
-stored_data/{user_id}/{YYYY-MM-DD}.jsonl
-```
+- `meals` — приём пищи (`user_id`, исходный текст, `created_at`);
+- `meal_products` — продукты приёма (`name, weight_grams, energy, protein, fat, carbohydrates`),
+  связаны с `meals` по внешнему ключу.
 
-Одна строка — один приём пищи со списком `products` (`{name, weight_grams, energy, protein, fat, carbohydrates}`).
+Таблицы создаются при старте (`init_models`, без миграций). Дневная статистика — это SQL-`SUM`
+по продуктам за сегодня. Адрес БД задаётся в `DATABASE_URL` (`postgresql+asyncpg://…`); в
+`docker-compose` поднимается сервис `db` (Postgres) с volume `pg_data`.
 
 ## Установка
 
